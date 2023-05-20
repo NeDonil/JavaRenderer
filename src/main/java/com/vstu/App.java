@@ -23,30 +23,30 @@ public class App {
         JSlider pitchSlider = new JSlider(SwingConstants.VERTICAL, -90, 90, 0);
         pane.add(pitchSlider, BorderLayout.EAST);
 
-        // panel to display render results
+        //Triangles to be renderer
+        ArrayList<Triangle> triangles = new ArrayList<>();
 
-        ArrayList<Triangle> tris = new ArrayList<>();
-
-        tris.add(new Triangle(new Vertex(100, 100, 100),
+        triangles.add(new Triangle(new Vertex(100, 100, 100),
                 new Vertex(-100, -100, 100),
                 new Vertex(-100, 100, -100),
-                Color.WHITE));
-
-        tris.add(new Triangle(new Vertex(100, 100, 100),
-                new Vertex(-100, -100, 100),
-                new Vertex(100, -100, -100),
                 Color.RED));
 
-        tris.add(new Triangle(new Vertex(-100, 100, -100),
+        triangles.add(new Triangle(new Vertex(100, 100, 100),
+                new Vertex(-100, -100, 100),
                 new Vertex(100, -100, -100),
-                new Vertex(100, 100, 100),
                 Color.GREEN));
 
-        tris.add(new Triangle(new Vertex(-100, 100, -100),
+        triangles.add(new Triangle(new Vertex(-100, 100, -100),
                 new Vertex(100, -100, -100),
-                new Vertex(-100, -100, 100),
+                new Vertex(100, 100, 100),
                 Color.BLUE));
 
+        triangles.add(new Triangle(new Vertex(-100, 100, -100),
+                new Vertex(100, -100, -100),
+                new Vertex(-100, -100, 100),
+                Color.MAGENTA));
+
+        // Render panel
         JPanel renderPanel = new JPanel() {
             public void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
@@ -56,11 +56,13 @@ public class App {
                 double heading = Math.toRadians(headingSlider.getValue());
                 double pitch = Math.toRadians(pitchSlider.getValue());
 
+                // Rotation matrix Y
                 Matrix headingTransform = new Matrix(new double[] {Math.cos(heading), 0, -Math.sin(heading),
                         0, 1, 0,
                         Math.sin(heading), 0, Math.cos(heading)}
                 );
 
+                // Rotation matrix X
                 Matrix pitchTransform = new Matrix(new double[] {
                         1, 0, 0,
                         0, Math.cos(pitch), -Math.sin(pitch),
@@ -74,12 +76,12 @@ public class App {
                 double[] zBuffer = new double[img.getWidth() * img.getHeight()];
                 Arrays.fill(zBuffer, Double.NEGATIVE_INFINITY);
 
-                for (Triangle t : tris) {
+                for (Triangle t : triangles) {
                     Vertex v1 = transform.transform(t.v1);
                     Vertex v2 = transform.transform(t.v2);
                     Vertex v3 = transform.transform(t.v3);
 
-                    // since we are not using Graphics2D anymore, we have to do translation manually
+                    // without Graphics2D we have to do translation manually
                     v1.x += getWidth() / 2;
                     v1.y += getHeight() / 2;
                     v2.x += getWidth() / 2;
@@ -100,6 +102,7 @@ public class App {
                             double b2 = ((y - v1.y) * (v3.x - v1.x) + (v3.y - v1.y) * (v1.x - x)) / triangleArea;
                             double b3 = ((y - v2.y) * (v1.x - v2.x) + (v1.y - v2.y) * (v2.x - x)) / triangleArea;
 
+                            // CPU zBuffer
                             if (b1 >= 0 && b1 <= 1 && b2 >= 0 && b2 <= 1 && b3 >= 0 && b3 <= 1) {
                                 double depth = b1 * v1.z + b2 * v2.z + b3 * v3.z;
                                 int zIndex = y * img.getWidth() + x;
@@ -110,13 +113,13 @@ public class App {
                             }
                         }
                     }
-
                 }
 
                 g2.drawImage(img, 0, 0, null);
             }
         };
 
+        // Sliders listeners
         headingSlider.addChangeListener(e -> renderPanel.repaint());
         pitchSlider.addChangeListener(e -> renderPanel.repaint());
 
