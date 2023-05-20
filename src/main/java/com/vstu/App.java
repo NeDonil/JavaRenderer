@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class App {
 
@@ -70,6 +71,9 @@ public class App {
 
                 BufferedImage img = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
 
+                double[] zBuffer = new double[img.getWidth() * img.getHeight()];
+                Arrays.fill(zBuffer, Double.NEGATIVE_INFINITY);
+
                 for (Triangle t : tris) {
                     Vertex v1 = transform.transform(t.v1);
                     Vertex v2 = transform.transform(t.v2);
@@ -95,11 +99,18 @@ public class App {
                             double b1 = ((y - v3.y) * (v2.x - v3.x) + (v2.y - v3.y) * (v3.x - x)) / triangleArea;
                             double b2 = ((y - v1.y) * (v3.x - v1.x) + (v3.y - v1.y) * (v1.x - x)) / triangleArea;
                             double b3 = ((y - v2.y) * (v1.x - v2.x) + (v1.y - v2.y) * (v2.x - x)) / triangleArea;
+
                             if (b1 >= 0 && b1 <= 1 && b2 >= 0 && b2 <= 1 && b3 >= 0 && b3 <= 1) {
-                                img.setRGB(x, y, t.color.getRGB());
+                                double depth = b1 * v1.z + b2 * v2.z + b3 * v3.z;
+                                int zIndex = y * img.getWidth() + x;
+                                if (zBuffer[zIndex] < depth) {
+                                    img.setRGB(x, y, t.color.getRGB());
+                                    zBuffer[zIndex] = depth;
+                                }
                             }
                         }
                     }
+
                 }
 
                 g2.drawImage(img, 0, 0, null);
@@ -110,7 +121,7 @@ public class App {
         pitchSlider.addChangeListener(e -> renderPanel.repaint());
 
         pane.add(renderPanel, BorderLayout.CENTER);
-        frame.setSize(400, 400);
+        frame.setSize(800, 800);
         frame.setVisible(true);
     }
 }
